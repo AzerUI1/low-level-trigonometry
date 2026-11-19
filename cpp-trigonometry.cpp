@@ -15,7 +15,7 @@ struct Triangle {
     string angle_type = "N/A";
 
     optional<double> a, b, c;
-    optional<double> A, B, C; // in degrees
+    optional<double> A, B, C; 
     optional<double> ma, mb, mc;
     optional<double> la, lb, lc;
     optional<double> ha, hb, hc;
@@ -47,7 +47,6 @@ static bool set_opt(optional<double>& target, double val, bool& changed, double 
     return false;
 }
 
-// Read a numerical value or N/A
 optional<double> get_value(const string& prompt) {
     string x;
     cout << prompt;
@@ -132,7 +131,6 @@ void deduce_single_trig(optional<double>& ang_deg, TrigSet& tr, const string& an
         }
     }
 
-    // Reciprocals
     if (tr.csc.has_value() && !approx_eq(*tr.csc, 0.0, 1e-9))
         set_opt(tr.sin, 1.0 / *tr.csc, changed);
     if (tr.sin.has_value() && !approx_eq(*tr.sin, 0.0, 1e-9))
@@ -164,12 +162,10 @@ void deduce_single_trig(optional<double>& ang_deg, TrigSet& tr, const string& an
         }
     }
 
-    // tan from sin and cos
     if (tr.sin.has_value() && tr.cos.has_value() && !approx_eq(*tr.cos, 0.0, 1e-9)) {
         set_opt(tr.tan, *tr.sin / *tr.cos, changed);
     }
 
-    // Angle from cos or tan
     if (!ang_deg.has_value()) {
         if (tr.cos.has_value()) {
             double c_val = clamp(*tr.cos, -1.0, 1.0);
@@ -190,7 +186,6 @@ void deduce_trig_and_angles(Triangle& t, bool& changed) {
     deduce_single_trig(t.B, t.trigB, t.angle_type, changed);
     deduce_single_trig(t.C, t.trigC, t.angle_type, changed);
 
-    // Angle sum = 180
     if (t.A.has_value() && t.B.has_value())
         set_opt(t.C, 180.0 - *t.A - *t.B, changed);
     if (t.A.has_value() && t.C.has_value())
@@ -200,7 +195,6 @@ void deduce_trig_and_angles(Triangle& t, bool& changed) {
 }
 
 void deduce_midlines_and_sides(Triangle& t, bool& changed) {
-    // Midlines <-> Sides
     if (t.a.has_value()) set_opt(t.na, *t.a / 2.0, changed);
     if (t.b.has_value()) set_opt(t.nb, *t.b / 2.0, changed);
     if (t.c.has_value()) set_opt(t.nc, *t.c / 2.0, changed);
@@ -208,8 +202,6 @@ void deduce_midlines_and_sides(Triangle& t, bool& changed) {
     if (t.na.has_value()) set_opt(t.a, *t.na * 2.0, changed);
     if (t.nb.has_value()) set_opt(t.b, *t.nb * 2.0, changed);
     if (t.nc.has_value()) set_opt(t.c, *t.nc * 2.0, changed);
-
-    // Perimeter & Semiperimeter
     if (t.a.has_value() && t.b.has_value() && t.c.has_value()) {
         double p = *t.a + *t.b + *t.c;
         set_opt(t.P, p, changed);
@@ -220,7 +212,6 @@ void deduce_midlines_and_sides(Triangle& t, bool& changed) {
 }
 
 void deduce_law_of_sines_cosines(Triangle& t, bool& changed) {
-    // Law of Cosines: SSS -> cos(angle)
     if (t.a.has_value() && t.b.has_value() && t.c.has_value()) {
         double a = *t.a, b = *t.b, c = *t.c;
         if (b > 0 && c > 0)
@@ -245,7 +236,6 @@ void deduce_law_of_sines_cosines(Triangle& t, bool& changed) {
         if (val >= 0.0) set_opt(t.c, sqrt(val), changed);
     }
 
-    // Law of Sines: a / sinA = b / sinB = c / sinC = 2R
     optional<double> two_R;
     if (t.a.has_value() && t.trigA.sin.has_value() && *t.trigA.sin > EPS)
         two_R = *t.a / *t.trigA.sin;
@@ -270,14 +260,12 @@ void deduce_law_of_sines_cosines(Triangle& t, bool& changed) {
 }
 
 void deduce_area_and_altitudes(Triangle& t, bool& changed) {
-    // Heron's formula
     if (t.s.has_value() && t.a.has_value() && t.b.has_value() && t.c.has_value()) {
         double s = *t.s;
         double prod = s * (s - *t.a) * (s - *t.b) * (s - *t.c);
         if (prod >= 0.0) set_opt(t.Area, sqrt(prod), changed);
     }
 
-    // SAS area
     if (t.a.has_value() && t.b.has_value() && t.trigC.sin.has_value())
         set_opt(t.Area, 0.5 * (*t.a) * (*t.b) * (*t.trigC.sin), changed);
     if (t.b.has_value() && t.c.has_value() && t.trigA.sin.has_value())
@@ -300,7 +288,6 @@ void deduce_area_and_altitudes(Triangle& t, bool& changed) {
         if (t.hc.has_value() && *t.hc > EPS) set_opt(t.c, 2.0 * (*t.Area) / (*t.hc), changed);
     }
 
-    // Area from 3 altitudes
     if (t.ha.has_value() && t.hb.has_value() && t.hc.has_value() &&
         *t.ha > EPS && *t.hb > EPS && *t.hc > EPS) {
         double inv_a = 1.0 / *t.ha;
@@ -316,7 +303,7 @@ void deduce_area_and_altitudes(Triangle& t, bool& changed) {
 }
 
 void deduce_medians_bisectors_radii(Triangle& t, bool& changed) {
-    // Medians from sides
+
     if (t.a.has_value() && t.b.has_value() && t.c.has_value()) {
         double a = *t.a, b = *t.b, c = *t.c;
         double v_a = 2.0 * b * b + 2.0 * c * c - a * a;
@@ -327,7 +314,6 @@ void deduce_medians_bisectors_radii(Triangle& t, bool& changed) {
         if (v_c >= 0.0) set_opt(t.mc, 0.5 * sqrt(v_c), changed);
     }
 
-    // Sides from 3 medians
     if (t.ma.has_value() && t.mb.has_value() && t.mc.has_value()) {
         double ma = *t.ma, mb = *t.mb, mc = *t.mc;
         double v_a = 2.0 * mb * mb + 2.0 * mc * mc - ma * ma;
@@ -338,7 +324,6 @@ void deduce_medians_bisectors_radii(Triangle& t, bool& changed) {
         if (v_c >= 0.0) set_opt(t.c, (2.0 / 3.0) * sqrt(v_c), changed);
     }
 
-    // Angle bisectors from sides & semiperimeter
     if (t.s.has_value() && t.a.has_value() && t.b.has_value() && t.c.has_value()) {
         double s = *t.s, a = *t.a, b = *t.b, c = *t.c;
         if (b + c > EPS) {
@@ -355,7 +340,6 @@ void deduce_medians_bisectors_radii(Triangle& t, bool& changed) {
         }
     }
 
-    // Circumradius R & Inradius r
     if (t.a.has_value() && t.b.has_value() && t.c.has_value() && t.Area.has_value() && *t.Area > EPS) {
         set_opt(t.R, ((*t.a) * (*t.b) * (*t.c)) / (4.0 * (*t.Area)), changed);
     }
@@ -423,7 +407,7 @@ vector<Triangle> input_triangles() {
 
     for (int i = 0; i < count_triangles; i++) {
         Triangle t;
-        cout << "\n========== TRIANGLE " << i + 1 << " ==========\n";
+        cout << "\n TRIANGLE " << i + 1 << " \n";
 
         cout << "\nEquilateral (A), Isosceles (B), "
              << "Scalene (C), Not Known (N/A): ";
@@ -442,37 +426,37 @@ vector<Triangle> input_triangles() {
         else if (type == "C" || type == "c") t.angle_type = "Obtuse";
         else t.angle_type = "N/A";
 
-        cout << "\n--- SIDES ---\n";
+        cout << "\nSIDES\n";
         t.a = get_value("Side a: ");
         t.b = get_value("Side b: ");
         t.c = get_value("Side c: ");
 
-        cout << "\n--- ANGLES ---\n";
+        cout << "\nANGLES\n";
         t.A = get_value("Angle A: ");
         t.B = get_value("Angle B: ");
         t.C = get_value("Angle C: ");
 
-        cout << "\n--- MEDIANS ---\n";
+        cout << "\nMEDIANS\n";
         t.ma = get_value("Median ma: ");
         t.mb = get_value("Median mb: ");
         t.mc = get_value("Median mc: ");
 
-        cout << "\n--- BISECTORS ---\n";
+        cout << "\nBISECTORS\n";
         t.la = get_value("Bisector la: ");
         t.lb = get_value("Bisector lb: ");
         t.lc = get_value("Bisector lc: ");
 
-        cout << "\n--- HEIGHTS ---\n";
+        cout << "\nHEIGHTS\n";
         t.ha = get_value("Height ha: ");
         t.hb = get_value("Height hb: ");
         t.hc = get_value("Height hc: ");
 
-        cout << "\n--- MIDLINES ---\n";
+        cout << "\nMIDLINES\n";
         t.na = get_value("Midline na: ");
         t.nb = get_value("Midline nb: ");
         t.nc = get_value("Midline nc: ");
 
-        cout << "\n--- TRIGONOMETRY ---\n";
+        cout << "\nTRIGONOMETRY\n";
         for (int j = 0; j < 3; j++) {
             string angle = (j == 0 ? "A" : j == 1 ? "B" : "C");
             TrigSet& tr = (j == 0 ? t.trigA : j == 1 ? t.trigB : t.trigC);
